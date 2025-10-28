@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,14 +14,12 @@
       font-family: "Poppins", sans-serif;
       overflow: hidden;
     }
-
     h1 {
       font-size: 3em;
       margin-top: 40px;
       color: #7ec8e3;
       text-shadow: 0 0 10px #7ec8e3;
     }
-
     p {
       font-size: 1.4em;
       margin: 20px auto;
@@ -30,15 +27,24 @@
       max-width: 600px;
       line-height: 1.6;
     }
-
-    img {
+    #cake-container {
+      position: relative;
+      display: inline-block;
+      margin-top: 20px;
+    }
+    #cake {
       width: 320px;
       border-radius: 20px;
-      margin-top: 20px;
       box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
-      transition: opacity 2s ease;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      display: block;
     }
-
+    #flameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
     button {
       background: #7ec8e3;
       color: #001f3f;
@@ -50,11 +56,9 @@
       margin-top: 30px;
       box-shadow: 0 0 15px #7ec8e3;
     }
-
     button:hover {
       background: #a7dbf5;
     }
-
     #confetti {
       position: fixed;
       top: 0;
@@ -63,24 +67,28 @@
       height: 100%;
       pointer-events: none;
     }
-
     #message {
       display: none;
       font-size: 1.6em;
       color: #7ec8e3;
       margin-top: 20px;
       text-shadow: 0 0 15px #7ec8e3;
+      transform: scale(0);
+      transition: transform 0.5s ease;
     }
   </style>
 </head>
 <body>
-
   <h1>🎉 Happy Birthday My Love 💙</h1>
-  <img id="cake" src="img/cake.jpg" alt="Birthday Cake" />
+
+  <div id="cake-container">
+    <img id="cake" src="img/cake.jpg" alt="Birthday Cake" />
+    <canvas id="flameCanvas" width="320" height="200"></canvas>
+  </div>
   
   <p>
     My love, another year older and even closer to your bee-keeping era 🐝😂  
-    You’re officially entering the “my back hurts for no reason” club, but don’t worry you’re still my favorite millennial 💙  
+    You’re officially entering the “my back hurts for no reason” club, but don’t worry — you’re still my favorite millennial 💙  
     Blow out your candles and make a wish!
   </p>
 
@@ -90,6 +98,7 @@
   <canvas id="confetti"></canvas>
 
   <script>
+    // Confetti setup
     const canvas = document.getElementById('confetti');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
@@ -99,14 +108,17 @@
     const message = document.getElementById('message');
 
     const confettiPieces = [];
+    const confettiColors = ['#7ec8e3','#a7dbf5','#ffffff','#00ffff','#7fffd4'];
+
     for (let i = 0; i < 150; i++) {
       confettiPieces.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height - canvas.height,
         r: Math.random() * 6 + 2,
-        d: Math.random() * 20 + 10,
-        color: hsl(${Math.random() * 60 + 180}, 100%, 70%),
-        tilt: Math.random() * 10 - 10
+        tilt: Math.random() * 15 - 15,
+        speedY: Math.random() * 3 + 2,
+        speedX: Math.random() * 2 - 1,
+        color: confettiColors[Math.floor(Math.random() * confettiColors.length)]
       });
     }
 
@@ -115,7 +127,7 @@
       confettiPieces.forEach(p => {
         ctx.beginPath();
         ctx.fillStyle = p.color;
-        ctx.ellipse(p.x, p.y, p.r, p.r / 2, Math.PI / 4, 0, 2 * Math.PI);
+        ctx.ellipse(p.x, p.y, p.r, p.r / 2, p.tilt * Math.PI / 180, 0, 2 * Math.PI);
         ctx.fill();
       });
       updateConfetti();
@@ -123,9 +135,13 @@
 
     function updateConfetti() {
       confettiPieces.forEach(p => {
-        p.y += Math.cos(p.d) + 2;
-        p.x += Math.sin(p.d);
-        if (p.y > canvas.height) p.y = -10;
+        p.y += p.speedY;
+        p.x += p.speedX;
+        p.tilt += 0.1;
+        if (p.y > canvas.height) {
+          p.y = -10;
+          p.x = Math.random() * canvas.width;
+        }
       });
     }
 
@@ -138,9 +154,36 @@
       })();
     }
 
+    // Candle flame animation
+    const flameCanvas = document.getElementById('flameCanvas');
+    const flameCtx = flameCanvas.getContext('2d');
+
+    function drawFlames() {
+      flameCtx.clearRect(0, 0, flameCanvas.width, flameCanvas.height);
+      const candlePositions = [80, 160, 240]; // example candle x-positions
+      candlePositions.forEach(x => {
+        const flameHeight = Math.random() * 20 + 30;
+        const flameWidth = flameHeight / 3;
+        const y = 150; // approximate top of cake
+        const gradient = flameCtx.createRadialGradient(x, y, 1, x, y, flameWidth);
+        gradient.addColorStop(0, "rgba(255, 200, 0, 1)");
+        gradient.addColorStop(0.5, "rgba(255, 100, 0, 0.8)");
+        gradient.addColorStop(1, "rgba(255, 50, 0, 0)");
+        flameCtx.fillStyle = gradient;
+        flameCtx.beginPath();
+        flameCtx.ellipse(x, y - flameHeight/2, flameWidth, flameHeight, 0, 0, 2 * Math.PI);
+        flameCtx.fill();
+      });
+      requestAnimationFrame(drawFlames);
+    }
+
+    drawFlames(); // start flickering flames
+
     async function startBlow() {
       message.style.display = "none";
       cake.style.opacity = 1;
+      cake.style.transform = 'scale(1)';
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const audioContext = new AudioContext();
@@ -152,4 +195,48 @@
 
         function detectBlow() {
           analyser.getByteFrequencyData(dataArray);
-          const avg = dataArray.reduce((a, b) => a + b) /
+          const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+          if (avg > 80) {
+            // Stop flames
+            flameCtx.clearRect(0, 0, flameCanvas.width, flameCanvas.height);
+
+            // Cake animation
+            cake.style.opacity = 0.5;
+            let i = 0;
+            const shake = setInterval(() => {
+              cake.style.transform = translate(${Math.sin(i) * 10}px, ${Math.sin(i*2) * 5}px) scale(0.9);
+              i += 0.5;
+              if (i > 6) {
+                clearInterval(shake);
+                cake.style.transform = 'scale(1)';
+              }
+            }, 50);
+
+            // Show message with scale animation
+            message.style.display = "block";
+            setTimeout(() => { message.style.transform = 'scale(1)'; }, 50);
+
+            startConfetti();
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+
+          requestAnimationFrame(detectBlow);
+        }
+        detectBlow();
+      } catch (err) {
+        alert("Please allow microphone access for the blow feature 💨🎂");
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      flameCanvas.width = cake.clientWidth;
+      flameCanvas.height = 200;
+    });
+  </script>
+</body>
+</html>
+
